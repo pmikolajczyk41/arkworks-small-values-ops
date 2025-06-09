@@ -5,19 +5,49 @@ use ark_ff::PrimeField;
 use ark_r1cs_std::{alloc::AllocVar, eq::EqGadget, fields::fp::FpVar};
 use ark_relations::r1cs::{ConstraintSystem, ConstraintSystemRef, SynthesisError};
 
+struct Stats {
+    constraints: usize,
+    variables: usize,
+}
+
 fn main() -> Result<(), SynthesisError> {
-    run_min(
-        "Lib version",
-        Fr::from(41),
-        Fr::from(1729),
-        arkworks_baby_gadgets::min::min::<Fr, 16>,
-    )?;
-    run_min("Standard version", Fr::from(41), Fr::from(1729), naive_min)?;
+    report_stats(&[
+        (2, run_comparison::<2>()?),
+        (4, run_comparison::<4>()?),
+        (8, run_comparison::<8>()?),
+        (16, run_comparison::<16>()?),
+        (32, run_comparison::<32>()?),
+        (64, run_comparison::<64>()?),
+        (128, run_comparison::<128>()?),
+        (250, run_comparison::<250>()?),
+    ]);
 
     Ok(())
 }
 
-fn run_min<Gadget>(header: &str, a: Fr, b: Fr, gadget: Gadget) -> Result<(), SynthesisError>
+fn report_stats(comparisons: &[(usize, (Stats, Stats))]) {
+    println!(
+        "{:<6} {:>12} {:>12}    {:>12} {:>12}",
+        "Bits", "LibConstr", "LibVars", "StdConstr", "StdVars"
+    );
+    println!("{}", "-".repeat(6 + 1 + 12 + 1 + 12 + 4 + 12 + 1 + 12));
+
+    for &(bits, (ref lib, ref std)) in comparisons {
+        println!(
+            "{:<6} {:>12} {:>12}    {:>12} {:>12}",
+            bits, lib.constraints, lib.variables, std.constraints, std.variables
+        );
+    }
+}
+
+fn run_comparison<const BITS: usize>() -> Result<(Stats, Stats), SynthesisError> {
+    let (a, b) = (Fr::from(41), Fr::from(1729));
+    let lib_stats = run_min(a, b, arkworks_baby_gadgets::min::<Fr, BITS>)?;
+    let naive_stats = run_min(a, b, naive_min)?;
+    Ok((lib_stats, naive_stats))
+}
+
+fn run_min<Gadget>(a: Fr, b: Fr, gadget: Gadget) -> Result<Stats, SynthesisError>
 where
     Gadget:
         Fn(ConstraintSystemRef<Fr>, &FpVar<Fr>, &FpVar<Fr>) -> Result<FpVar<Fr>, SynthesisError>,
@@ -31,18 +61,10 @@ where
     let capped = gadget(cs.clone(), &value, &cap)?;
     expected.enforce_equal(&capped)?;
 
-    report_cs(header, cs);
-    Ok(())
-}
-
-fn report_cs(header: &str, cs: ConstraintSystemRef<Fr>) {
-    assert!(cs.is_satisfied().unwrap());
-    println!("=========={:=<20}==========", format!(" {header} "));
-    println!("Constraints: {}", cs.num_constraints());
-    println!(
-        "Variables:   {}",
-        cs.num_witness_variables() + cs.num_instance_variables()
-    );
+    Ok(Stats {
+        constraints: cs.num_constraints(),
+        variables: cs.num_witness_variables() + cs.num_instance_variables(),
+    })
 }
 
 fn naive_min<F: PrimeField>(
