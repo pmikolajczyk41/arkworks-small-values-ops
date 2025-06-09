@@ -4,11 +4,11 @@ An R1CS gadget for computing the minimum of two field elements without using exp
 
 ## 1. Problem Statement
 
-Let $\mathbb{F}$ be a prime field and fix an integer $\ell$ with $\ell < \log_{2}|\mathbb{F}|$.
+Let $\mathbb{F}$ be a prime field and fix an integer $\ell$ with $\ell < \lfloor\log_{2}|\mathbb{F}|\rfloor$.
 Given two inputs $a, b \in \mathbb{F}$ satisfying $0 \le a, b < 2^{\ell}$, we want to
 compute $c = \min(a, b)$ as a field element.
 
-*Note:* By $\ell < \log_{2}|\mathbb{F}|$ we assume $a,b$ do not exceed $|\mathbb{F}|/2$, so no modular wraparound
+*Note:* By $\ell < \log_{2} \lfloor|\mathbb{F}|\rfloor$ we assume $a,b$ do not exceed $|\mathbb{F}|/2$, so no modular wraparound
 occurs.
 
 ## 2. Protocol
@@ -27,7 +27,7 @@ Finally, output $c=a-over$
 ## 3. Correctness
 
 1. From constraint 2, at most one of $over$ or $under$ is nonzero.
-2. Since $\ell < \log_{2}| \mathbb{F}|$, adding $under$ or $over$ to $a$ or $b$ never wraps around the modulus.
+2. Since $\ell < \log_{2} \lfloor|\mathbb{F}|\rfloor$, adding $under$ or $over$ to $a$ or $b$ never wraps around the modulus: summing two $\ell$-bit numbers will yield a number strictly less than $|\mathbb{F}|$.
 
 - **Case $a \le b$**  
   Balance implies $a + under = b + over$, forcing $over = 0$ (via mutual exclusion).  
