@@ -1,8 +1,8 @@
 [package]
-name = "arkworks-baby-gadgets"
+name = "arkworks-small-values-ops"
 authors = ["Piotr Mikołajczyk <piomiko41@gmail.com>"]
 edition = "2024"
-repository = "https://github.com/pmikolajczyk41/arkworks-baby-gadgets"
+repository = "https://github.com/pmikolajczyk41/arkworks-small-values-ops"
 version = "0.1.0"
 
 [dependencies]

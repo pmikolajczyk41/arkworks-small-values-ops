@@ -42,7 +42,7 @@ fn report_stats(comparisons: &[(usize, (Stats, Stats))]) {
 
 fn run_comparison<const BITS: usize>() -> Result<(Stats, Stats), SynthesisError> {
     let (a, b) = (Fr::from(41), Fr::from(1729));
-    let lib_stats = run_min(a, b, arkworks_baby_gadgets::min::<Fr, BITS>)?;
+    let lib_stats = run_min(a, b, arkworks_small_values_ops::min::<Fr, BITS>)?;
     let naive_stats = run_min(a, b, naive_min)?;
     Ok((lib_stats, naive_stats))
 }
