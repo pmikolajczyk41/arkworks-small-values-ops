@@ -53,3 +53,43 @@ fn get_slack<F: PrimeField>(
         }
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use ark_bn254::Fr;
+    use ark_r1cs_std::fields::fp::FpVar;
+    use ark_relations::r1cs::ConstraintSystem;
+
+    use super::*;
+    
+    fn run<const BITS: usize>(a: u64, b: u64) -> Result<(), SynthesisError> {
+        let cs = ConstraintSystem::<Fr>::new_ref();
+        let a_var = FpVar::new_witness(cs.clone(), || Ok(Fr::from(a)))?;
+        let b_var = FpVar::new_witness(cs.clone(), || Ok(Fr::from(b)))?;
+
+        let result = min::<_, BITS>(cs.clone(), &a_var, &b_var)?;
+        assert_eq!(result.value()?, Fr::from(a.min(b)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_min() -> Result<(), SynthesisError> {
+        // Small values
+        run::<3>(3, 5)?;
+        run::<3>(5, 3)?;
+
+        // Equal values
+        run::<3>(5, 5)?;
+
+        // Zero values
+        run::<3>(0, 5)?;
+        run::<3>(5, 0)?;
+        run::<3>(0, 0)?;
+        
+        // Larger values
+        run::<64>(123456789, 234567890)?;
+        
+        Ok(())
+    }
+}
