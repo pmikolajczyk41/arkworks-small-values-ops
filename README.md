@@ -2,33 +2,27 @@
 
 An R1CS gadget for computing the minimum of two field elements without using explicit comparisons.
 
----
-
 ## 1. Problem Statement
 
 Let $\mathbb{F}$ be a prime field and fix an integer $\ell$ with $\ell < \log_{2}|\mathbb{F}|$.
-Given two inputs $a, b \in \mathbb{F}$ satisfying $0 \;\le\; a, b \;<\; 2^{\ell}$, we want to
-compute $c \;=\; \min(a, b)$ as a field element.
+Given two inputs $a, b \in \mathbb{F}$ satisfying $0 \le a, b < 2^{\ell}$, we want to
+compute $c = \min(a, b)$ as a field element.
 
 *Note:* By $\ell < \log_{2}|\mathbb{F}|$ we assume $a,b$ do not exceed $|\mathbb{F}|/2$, so no modular wraparound
 occurs.
-
----
 
 ## 2. Protocol
 
 Introduce two auxiliary witnesses $over$ and $under$ and enforce the following constraints:
 
 1. **(Balance constraint)**  
-   $a + under \;=\; b + over$
+   $a + under = b + over$
 2. **(Mutual-exclusion constraint)**  
-   $over \cdot under \;=\; 0$
+   $over \cdot under = 0$
 3. **(Bit-length bounds)**  
-   $over,\, under \;<\; 2^{\ell}$
+   $over,under < 2^{\ell}$
 
 Finally, output $c=a-over$
-
----
 
 ## 3. Correctness
 
@@ -42,8 +36,6 @@ Finally, output $c=a-over$
 - **Case $a > b$**  
   Then $under = 0$ and $over = a - b$.  
   Hence $\min(a,b) = a - over = b$.
-
----
 
 ## 4. R1CS Realization
 
@@ -66,11 +58,7 @@ Each of these four equations is one R1C.
 | Witness variables         | $2\ell + 2$ |
 | Rank-1 constraints (R1Cs) | $2\ell + 4$ |
 
----
-
 ## 5. Empirical Evaluation
-
-Run with`cargo run --release`
 
 | Bits ($\ell$) | Lib Gadget Constraints | Lib Gadget Vars | Std Gadget Constraints | Std Gadget Vars |
 |:-------------:|-----------------------:|----------------:|-----------------------:|----------------:|
@@ -83,7 +71,10 @@ Run with`cargo run --release`
 |      128      |                    264 |             265 |                   1920 |            1458 |
 |      250      |                    508 |             509 |                   1920 |            1458 |
 
----
+`Lib Gadget *` refers to a circuit using the above idea.
+`Std Gadget *` refers to a circuit using the standard approach of comparing $a$ and $b$.
+
+To reproduce, run `cargo run --release`
 
 ## 6. Extensions
 
