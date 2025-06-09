@@ -24,6 +24,11 @@ pub fn min<F: PrimeField, const BITS: usize>(
     Ok(a - over)
 }
 
+/// Computes the maximum of two field elements `a` and `b` using slack variables to ensure that the
+/// result is correct without directly comparing the two values.
+///
+/// `a` and `b` must be in the range [0, 1 << `BITS`). `BITS` must be strictly less than the floor
+/// of log2 of the field's modulus.
 pub fn max<F: PrimeField, const BITS: usize>(
     cs: ConstraintSystemRef<F>,
     a: &FpVar<F>,
@@ -58,7 +63,7 @@ fn get_under_and_over_checked<F: PrimeField, const BITS: usize>(
 #[cfg(test)]
 mod tests {
     use ark_bn254::Fr;
-    use ark_r1cs_std::{alloc::AllocVar, fields::fp::FpVar, R1CSVar};
+    use ark_r1cs_std::{R1CSVar, alloc::AllocVar, fields::fp::FpVar};
     use ark_relations::r1cs::ConstraintSystem;
 
     use super::*;
