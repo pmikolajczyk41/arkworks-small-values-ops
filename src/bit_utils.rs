@@ -7,6 +7,10 @@ use ark_r1cs_std::{
 };
 use ark_relations::r1cs::{ConstraintSystemRef, SynthesisError};
 
+/// Given a field element, get its `N` least significant bits as a vector of `Boolean`s in the
+/// little-endian order.
+///
+/// `cs` is the constraint system reference used for creating the witness variables.
 pub fn to_bits<F: PrimeField, const BITS: usize>(
     cs: ConstraintSystemRef<F>,
     value: &FpVar<F>,
@@ -18,6 +22,8 @@ pub fn to_bits<F: PrimeField, const BITS: usize>(
     Ok(bits)
 }
 
+/// Given an array of `Boolean`s representing the bits of a field element in little-endian order,
+/// reconstruct the field element.
 pub fn from_bits<F: PrimeField, const BITS: usize>(
     bits: &[Boolean<F>; BITS],
 ) -> Result<FpVar<F>, SynthesisError> {
