@@ -1,6 +1,17 @@
 use ark_ff::PrimeField;
-use ark_r1cs_std::{R1CSVar, alloc::AllocVar, fields::fp::FpVar};
+use ark_r1cs_std::{
+    R1CSVar,
+    alloc::AllocVar,
+    eq::EqGadget,
+    fields::{FieldVar, fp::FpVar},
+    prelude::Boolean,
+};
 use ark_relations::r1cs::{ConstraintSystemRef, SynthesisError};
+
+/// Enforce that `value` is zero.
+pub fn enforce_zero<F: PrimeField>(value: &FpVar<F>) -> Result<(), SynthesisError> {
+    value.is_zero()?.enforce_equal(&Boolean::TRUE)
+}
 
 /// Return the slack between `from` and `to` if `from < to`, otherwise return zero.
 pub fn get_slack<F: PrimeField>(

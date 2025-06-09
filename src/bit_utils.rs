@@ -24,9 +24,7 @@ pub fn to_bits<F: PrimeField, const BITS: usize>(
 
 /// Given an array of `Boolean`s representing the bits of a field element in little-endian order,
 /// reconstruct the field element.
-pub fn from_bits<F: PrimeField, const BITS: usize>(
-    bits: &[Boolean<F>; BITS],
-) -> Result<FpVar<F>, SynthesisError> {
+pub fn from_bits<F: PrimeField>(bits: &[Boolean<F>]) -> Result<FpVar<F>, SynthesisError> {
     let mut value = FpVar::zero();
     for (i, bit) in bits.iter().enumerate() {
         value += FpVar::from(bit.clone()) * FpVar::constant(F::from(2).pow([i as u64]));

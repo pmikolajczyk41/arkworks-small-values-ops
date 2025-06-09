@@ -1,16 +1,12 @@
 use std::ops::Mul;
 
 use ark_ff::PrimeField;
-use ark_r1cs_std::{
-    boolean::Boolean,
-    eq::EqGadget,
-    fields::{FieldVar, fp::FpVar},
-};
+use ark_r1cs_std::{eq::EqGadget, fields::fp::FpVar};
 use ark_relations::r1cs::{ConstraintSystemRef, SynthesisError};
 
 use crate::{
-    bit_utils::{from_bits, to_bits},
-    common::get_slack,
+    common::{enforce_zero, get_slack},
+    enforce_in_binary_bound,
 };
 
 pub fn min<F: PrimeField, const BITS: usize>(
@@ -22,19 +18,13 @@ pub fn min<F: PrimeField, const BITS: usize>(
     let undr = get_slack(cs.clone(), value, cap)?;
 
     // (1) Ensure that `over` and `undr` are within [0, 1 << BITS)
-    for x in [&over, &undr] {
-        let bits = to_bits::<F, BITS>(cs.clone(), x)?;
-        let reconstructed_from_bits = from_bits::<F, BITS>(&bits)?;
-        reconstructed_from_bits.enforce_equal(x)?;
-    }
+    enforce_in_binary_bound::<_, BITS>(&over)?;
+    enforce_in_binary_bound::<_, BITS>(&undr)?;
 
     // (2) Ensure that `over` and `undr` are mutually exclusive
-    (&over)
-        .mul(&undr)
-        .is_zero()?
-        .enforce_equal(&Boolean::TRUE)?;
+    enforce_zero(&over.clone().mul(&undr))?;
 
-    // (3) Check the slack condition
+    // (3) Check the balance condition
     (value + undr).enforce_equal(&(cap + &over))?;
 
     Ok(value - over)
