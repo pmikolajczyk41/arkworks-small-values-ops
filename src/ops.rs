@@ -39,6 +39,21 @@ pub fn max<F: PrimeField, const BITS: usize>(
     Ok(a + undr)
 }
 
+/// Computes the absolute difference between two field elements `a` and `b` using slack variables
+/// to ensure that the result is correct without directly comparing the two values.
+///
+/// `a` and `b` must be in the range [0, 1 << `BITS`). `BITS` must be strictly less than the floor
+/// of log2 of the field's modulus.
+pub fn abs_diff<F: PrimeField, const BITS: usize>(
+    cs: ConstraintSystemRef<F>,
+    a: &FpVar<F>,
+    b: &FpVar<F>,
+) -> Result<FpVar<F>, SynthesisError> {
+    assert!(BITS < (F::MODULUS_BIT_SIZE - 1) as usize);
+    let (undr, over) = get_under_and_over_checked::<F, BITS>(cs, a, b)?;
+    Ok(undr + over)
+}
+
 fn get_under_and_over_checked<F: PrimeField, const BITS: usize>(
     cs: ConstraintSystemRef<F>,
     a: &FpVar<F>,
@@ -78,6 +93,9 @@ mod tests {
 
         let max_result = max::<_, BITS>(cs.clone(), &a_var, &b_var)?;
         assert_eq!(max_result.value()?, Fr::from(a.max(b)));
+
+        let abs_diff_result = abs_diff::<_, BITS>(cs.clone(), &a_var, &b_var)?;
+        assert_eq!(abs_diff_result.value()?, Fr::from(a.abs_diff(b)));
 
         Ok(())
     }
