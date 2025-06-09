@@ -1,14 +1,16 @@
 use std::ops::Mul;
 
-use ark_ff::{BigInteger, PrimeField};
+use ark_ff::PrimeField;
 use ark_r1cs_std::{
-    R1CSVar,
     alloc::AllocVar,
     boolean::Boolean,
     eq::EqGadget,
-    fields::{FieldVar, fp::FpVar},
+    fields::{fp::FpVar, FieldVar},
+    R1CSVar,
 };
 use ark_relations::r1cs::{ConstraintSystemRef, SynthesisError};
+
+use crate::bit_utils::{from_bits, to_bits};
 
 pub fn min<F: PrimeField, const BITS: usize>(
     cs: ConstraintSystemRef<F>,
@@ -50,25 +52,4 @@ fn get_slack<F: PrimeField>(
             Ok(F::zero())
         }
     })
-}
-
-fn to_bits<F: PrimeField, const BITS: usize>(
-    cs: ConstraintSystemRef<F>,
-    value: &FpVar<F>,
-) -> Result<[Boolean<F>; BITS], SynthesisError> {
-    let mut bits = [Boolean::FALSE; BITS];
-    for (i, bit) in bits.iter_mut().enumerate() {
-        *bit = Boolean::new_witness(cs.clone(), || Ok(value.value()?.into_bigint().get_bit(i)))?;
-    }
-    Ok(bits)
-}
-
-fn from_bits<F: PrimeField, const BITS: usize>(
-    bits: &[Boolean<F>; BITS],
-) -> Result<FpVar<F>, SynthesisError> {
-    let mut value = FpVar::zero();
-    for (i, bit) in bits.iter().enumerate() {
-        value += FpVar::from(bit.clone()) * FpVar::constant(F::from(2).pow([i as u64]));
-    }
-    Ok(value)
 }
