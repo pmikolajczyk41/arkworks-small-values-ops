@@ -9,13 +9,38 @@ use crate::{
     enforce_in_binary_bound,
 };
 
+/// Computes the minimum of two field elements `a` and `b` using slack variables to ensure that the
+/// result is correct without directly comparing the two values.
+///
+/// `a` and `b` must be in the range [0, 1 << `BITS`). `BITS` must be strictly less than the floor
+/// of log2 of the field's modulus.
 pub fn min<F: PrimeField, const BITS: usize>(
     cs: ConstraintSystemRef<F>,
-    value: &FpVar<F>,
-    cap: &FpVar<F>,
+    a: &FpVar<F>,
+    b: &FpVar<F>,
 ) -> Result<FpVar<F>, SynthesisError> {
-    let over = get_slack(cs.clone(), cap, value)?;
-    let undr = get_slack(cs.clone(), value, cap)?;
+    assert!(BITS < (F::MODULUS_BIT_SIZE - 1) as usize);
+    let (_undr, over) = get_under_and_over_checked::<F, BITS>(cs, a, b)?;
+    Ok(a - over)
+}
+
+pub fn max<F: PrimeField, const BITS: usize>(
+    cs: ConstraintSystemRef<F>,
+    a: &FpVar<F>,
+    b: &FpVar<F>,
+) -> Result<FpVar<F>, SynthesisError> {
+    assert!(BITS < (F::MODULUS_BIT_SIZE - 1) as usize);
+    let (undr, _over) = get_under_and_over_checked::<F, BITS>(cs, a, b)?;
+    Ok(a + undr)
+}
+
+fn get_under_and_over_checked<F: PrimeField, const BITS: usize>(
+    cs: ConstraintSystemRef<F>,
+    a: &FpVar<F>,
+    b: &FpVar<F>,
+) -> Result<(FpVar<F>, FpVar<F>), SynthesisError> {
+    let over = get_slack(cs.clone(), b, a)?;
+    let undr = get_slack(cs.clone(), a, b)?;
 
     // (1) Ensure that `over` and `undr` are within [0, 1 << BITS)
     enforce_in_binary_bound::<_, BITS>(&over)?;
@@ -25,15 +50,15 @@ pub fn min<F: PrimeField, const BITS: usize>(
     enforce_zero(&over.clone().mul(&undr))?;
 
     // (3) Check the balance condition
-    (value + undr).enforce_equal(&(cap + &over))?;
+    (a + &undr).enforce_equal(&(b + &over))?;
 
-    Ok(value - over)
+    Ok((undr, over))
 }
 
 #[cfg(test)]
 mod tests {
     use ark_bn254::Fr;
-    use ark_r1cs_std::{R1CSVar, alloc::AllocVar, fields::fp::FpVar};
+    use ark_r1cs_std::{alloc::AllocVar, fields::fp::FpVar, R1CSVar};
     use ark_relations::r1cs::ConstraintSystem;
 
     use super::*;
@@ -43,14 +68,17 @@ mod tests {
         let a_var = FpVar::new_witness(cs.clone(), || Ok(Fr::from(a)))?;
         let b_var = FpVar::new_witness(cs.clone(), || Ok(Fr::from(b)))?;
 
-        let result = min::<_, BITS>(cs.clone(), &a_var, &b_var)?;
-        assert_eq!(result.value()?, Fr::from(a.min(b)));
+        let min_result = min::<_, BITS>(cs.clone(), &a_var, &b_var)?;
+        assert_eq!(min_result.value()?, Fr::from(a.min(b)));
+
+        let max_result = max::<_, BITS>(cs.clone(), &a_var, &b_var)?;
+        assert_eq!(max_result.value()?, Fr::from(a.max(b)));
 
         Ok(())
     }
 
     #[test]
-    fn test_min() -> Result<(), SynthesisError> {
+    fn test() -> Result<(), SynthesisError> {
         // Small values
         run::<3>(3, 5)?;
         run::<3>(5, 3)?;
