@@ -1,0 +1,32 @@
+name: Main branch push
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: "${{ github.ref }}-${{ github.workflow }}"
+  cancel-in-progress: true
+
+jobs:
+  run-lint-and-tests:
+    name: Run lint and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install active toolchain
+        shell: bash
+        run: rustup toolchain install
+
+      - name: Ensure formatting is correct
+        run: cargo fmt --all --check
+
+      - name: Run linter
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests
+        run: cargo test --release
