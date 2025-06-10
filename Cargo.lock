@@ -175,7 +175,7 @@ dependencies = [
 
 [[package]]
 name = "arkworks-small-values-ops"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "ark-bn254",
  "ark-ff",
