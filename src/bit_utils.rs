@@ -3,6 +3,8 @@ use ark_r1cs_std::{
     R1CSVar,
     alloc::AllocVar,
     boolean::Boolean,
+    convert::ToConstraintFieldGadget,
+    eq::EqGadget,
     fields::{FieldVar, fp::FpVar},
 };
 use ark_relations::r1cs::{ConstraintSystemRef, SynthesisError};
@@ -30,4 +32,14 @@ pub fn from_bits<F: PrimeField>(bits: &[Boolean<F>]) -> Result<FpVar<F>, Synthes
         value += FpVar::from(bit.clone()) * FpVar::constant(F::from(2).pow([i as u64]));
     }
     Ok(value)
+}
+
+/// Casts a field element to a `Boolean` variable, enforcing that the field element is either 0 or 1.
+pub fn cast_to_boolean<F: PrimeField>(
+    cs: ConstraintSystemRef<F>,
+    value: &FpVar<F>,
+) -> Result<Boolean<F>, SynthesisError> {
+    let boolean = Boolean::new_witness(cs, || Ok(value.value()?.is_one()))?;
+    boolean.to_constraint_field()?[0].enforce_equal(value)?;
+    Ok(boolean)
 }
