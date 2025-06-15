@@ -43,3 +43,11 @@ pub fn cast_to_boolean<F: PrimeField>(
     boolean.to_constraint_field()?[0].enforce_equal(value)?;
     Ok(boolean)
 }
+
+/// Casts a field element to a `u64`, assuming the field element is in the range [0, 2^64).
+pub fn cast_to_u64<F: PrimeField>(value: &FpVar<F>) -> Result<u64, SynthesisError> {
+    let bigint = value.value()?.into_bigint();
+    Ok(u64::from_le_bytes(
+        bigint.to_bytes_le()[..8].try_into().unwrap(),
+    ))
+}
