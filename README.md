@@ -1,6 +1,9 @@
-# Arkworks _min_ optimization
+# Optimized arithmetic operations for small values in Arkworks
 
-An R1CS gadget for computing the minimum of two field elements without using explicit comparisons.
+This library provides efficient arithmetic operations for small values in R1CS circuits implemented in Arkworks.
+The main idea is to avoid expensive comparisons and instead use auxiliary slack variables.
+
+Below is a description of the `min` gadget, which computes the minimum of two small field elements, which presents the core concept of this library.
 
 ## 1. Problem Statement
 
